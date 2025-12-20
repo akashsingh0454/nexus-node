@@ -2,6 +2,12 @@ package ocsf
 
 import "time"
 
+// OCSF Event Interface
+type Event interface {
+	GetCategory() int
+	GetSeverity() string
+}
+
 // OCSF Base Event fields
 type BaseEvent struct {
 	ClassUID int       `json:"class_uid"`
@@ -10,6 +16,14 @@ type BaseEvent struct {
 	Time     time.Time `json:"time"`
 	Severity string    `json:"severity"`
 	Message  string    `json:"message"`
+}
+
+func (e BaseEvent) GetCategory() int {
+	return e.Category
+}
+
+func (e BaseEvent) GetSeverity() string {
+	return e.Severity
 }
 
 // Device Inventory Object (part of many classes)

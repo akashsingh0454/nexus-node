@@ -9,7 +9,8 @@ import (
 
 type Config struct {
 	Agent       AgentConfig       `yaml:"agent"`
-	Exporter    ExporterConfig    `yaml:"exporter"`
+	Security    SecurityConfig    `yaml:"security"`
+	Pipeline    PipelineConfig    `yaml:"pipeline"`
 	Modules     ModulesConfig     `yaml:"modules"`
 	Remediation RemediationConfig `yaml:"remediation"`
 }
@@ -20,8 +21,24 @@ type AgentConfig struct {
 	ServerURL string `yaml:"server_url"`
 }
 
-type ExporterConfig struct {
-	Splunk SplunkConfig `yaml:"splunk"`
+type SecurityConfig struct {
+	TLS TLSConfig `yaml:"tls"`
+}
+
+type TLSConfig struct {
+	CAFile             string `yaml:"ca_file"`
+	CertFile           string `yaml:"cert_file"`
+	KeyFile            string `yaml:"key_file"`
+	InsecureSkipVerify bool   `yaml:"insecure_skip_verify"`
+}
+
+type PipelineConfig struct {
+	Exporters ExportersMap `yaml:"exporters"`
+	Routes    []RouteRule  `yaml:"routes"` // Future: Advanced routing
+}
+
+type ExportersMap struct {
+	Splunk SplunkConfig `yaml:"splunk_main"` // Hardcoded key for now to match yaml
 }
 
 type SplunkConfig struct {
@@ -29,6 +46,11 @@ type SplunkConfig struct {
 	URL           string        `yaml:"url"`
 	Token         string        `yaml:"token"`
 	BatchInterval time.Duration `yaml:"batch_interval"`
+}
+
+type RouteRule struct {
+	DataTypes    []string `yaml:"data_types"`
+	Destinations []string `yaml:"destinations"`
 }
 
 type ModulesConfig struct {
@@ -62,11 +84,11 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.Agent.Name = envName
 	}
 	if envSplunkURL := os.Getenv("NEXUS_SPLUNK_URL"); envSplunkURL != "" {
-		cfg.Exporter.Splunk.URL = envSplunkURL
-		cfg.Exporter.Splunk.Enabled = true
+		cfg.Pipeline.Exporters.Splunk.URL = envSplunkURL
+		cfg.Pipeline.Exporters.Splunk.Enabled = true
 	}
 	if envSplunkToken := os.Getenv("NEXUS_SPLUNK_TOKEN"); envSplunkToken != "" {
-		cfg.Exporter.Splunk.Token = envSplunkToken
+		cfg.Pipeline.Exporters.Splunk.Token = envSplunkToken
 	}
 
 	return &cfg, nil

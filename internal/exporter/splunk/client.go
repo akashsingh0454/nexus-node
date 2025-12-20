@@ -9,15 +9,19 @@ import (
 )
 
 type Client struct {
-	URL   string
-	Token string
-	// Buffer ...
+	URL        string
+	Token      string
+	HttpClient *http.Client
 }
 
-func NewClient(url, token string) *Client {
+func NewClient(url, token string, client *http.Client) *Client {
+	if client == nil {
+		client = &http.Client{Timeout: 10 * time.Second}
+	}
 	return &Client{
-		URL:   url,
-		Token: token,
+		URL:        url,
+		Token:      token,
+		HttpClient: client,
 	}
 }
 
@@ -40,8 +44,7 @@ func (c *Client) SendEvent(event interface{}) error {
 	req.Header.Set("Authorization", "Splunk "+c.Token)
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := c.HttpClient.Do(req)
 	if err != nil {
 		return err
 	}

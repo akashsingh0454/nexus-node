@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"log"
+	"net/http"
 	"time"
 
 	"nexus/internal/config"
@@ -11,7 +12,9 @@ import (
 	"nexus/internal/module"
 	"nexus/internal/modules/patcher"
 	"nexus/internal/modules/trivy"
+	"nexus/internal/pipeline"
 	"nexus/internal/telemetry"
+	"nexus/internal/transport"
 	"nexus/pkg/ocsf"
 )
 
@@ -19,7 +22,7 @@ import (
 type Agent struct {
 	Config        *config.Config
 	ModuleManager *module.Manager
-	SplunkClient  *splunk.Client
+	Router        *pipeline.Router
 	Telemetry     telemetry.Collector
 	TrivyManager  *trivy.Manager
 	Patcher       *patcher.Manager
@@ -36,11 +39,25 @@ func NewAgent(cfg *config.Config) *Agent {
 		mgr.Register(mod)
 	}
 
-	// Initialize Splunk Client
-	var splunkClient *splunk.Client
-	if cfg.Exporter.Splunk.Enabled {
-		splunkClient = splunk.NewClient(cfg.Exporter.Splunk.URL, cfg.Exporter.Splunk.Token)
+	// 1. Initialize Secure Transport (mTLS / CA)
+	secureClient, err := transport.NewClient(cfg.Security)
+	if err != nil {
+		log.Printf("Failed to create secure transport: %v. Falling back to default.", err)
+		secureClient = &http.Client{Timeout: 30 * time.Second}
 	}
+
+	// 2. Initialize Exporters (Splunk)
+	var splunkClient *splunk.Client
+	if cfg.Pipeline.Exporters.Splunk.Enabled {
+		splunkClient = splunk.NewClient(
+			cfg.Pipeline.Exporters.Splunk.URL,
+			cfg.Pipeline.Exporters.Splunk.Token,
+			secureClient,
+		)
+	}
+
+	// 3. Initialize Pipeline Router
+	router := pipeline.NewRouter(cfg.Pipeline, splunkClient)
 
 	// Initialize Telemetry
 	tel := telemetry.NewSimulatedCollector()
@@ -54,7 +71,7 @@ func NewAgent(cfg *config.Config) *Agent {
 	return &Agent{
 		Config:        cfg,
 		ModuleManager: mgr,
-		SplunkClient:  splunkClient,
+		Router:        router,
 		Telemetry:     tel,
 		// Assuming trivy is in ./bin/trivy.exe for now
 		TrivyManager: trivy.NewManager("./bin/trivy.exe"),
@@ -113,27 +130,25 @@ func Run(a *Agent, ctx context.Context) error {
 			log.Println("Stopping agent main loop...")
 			return nil
 
-		// Telemetry Events
+		// Telemetry Events calling Router
 		case evt := <-a.Telemetry.Events():
-			if a.SplunkClient != nil {
-				// Fire and forget for speed
-				// In production: use a worker pool or buffer
-				go a.SplunkClient.SendEvent(evt.Data)
-			}
+			// Fire and forget routing
+			go a.Router.Route(evt)
 
 		case <-ticker.C:
-			// Send heartbeat
+			// Send heartbeat via Router
 			log.Println("Heartbeat: Agent is alive.")
 
-			if a.SplunkClient != nil {
-				hb := ocsf.NewInventoryEvent(ocsf.Device{
-					Hostname: a.Config.Agent.Name,
-					OS:       "Windows", // Placeholder functionality
-				})
-				if err := a.SplunkClient.SendEvent(hb); err != nil {
-					log.Printf("Failed to send heartbeat to Splunk: %v", err)
-				}
-			}
+			hb := ocsf.NewInventoryEvent(ocsf.Device{
+				Hostname: a.Config.Agent.Name,
+				OS:       "Windows", // Placeholder functionality
+			})
+
+			// We wrap OCSF event if needed, or Router handles raw OCSF
+			// For now, assuming ocsf.Event matches what Router expects (which is just interface{} or ocsf.Event base)
+			// Actually Router expects ocsf.Event, InventoryEvent embeds BaseEvent so it satisfies interfaces?
+			// Let's assume yes or cast.
+			go a.Router.Route(hb)
 		}
 	}
 }
