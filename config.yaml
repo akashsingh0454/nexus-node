@@ -18,6 +18,9 @@ modules:
     enabled: true
     port: 31337
     cache_dir: "./cache"
+  container:
+    enabled: true
+    socket_path: "/var/run/docker.sock"
 
 remediation:
   enabled: true

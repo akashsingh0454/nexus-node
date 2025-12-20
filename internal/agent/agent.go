@@ -10,6 +10,7 @@ import (
 	"nexus/internal/engine"
 	"nexus/internal/exporter/splunk"
 	"nexus/internal/module"
+	"nexus/internal/modules/container"
 	"nexus/internal/modules/hive"
 	"nexus/internal/modules/patcher"
 	"nexus/internal/modules/trivy"
@@ -28,6 +29,7 @@ type Agent struct {
 	TrivyManager  *trivy.Manager
 	Patcher       *patcher.Manager
 	HiveManager   *hive.Manager
+	ContainerW    *container.Watcher
 	Remediator    *engine.Remediator
 }
 
@@ -73,6 +75,12 @@ func NewAgent(cfg *config.Config) *Agent {
 	// Initialize Hive (P2P)
 	hiveMgr := hive.NewManager(cfg.Modules.Hive, cfg.Agent.Name)
 
+	// Initialize Container Watcher
+	var containerW *container.Watcher
+	if cfg.Modules.Container.Enabled {
+		containerW = container.NewWatcher(cfg.Modules.Container.SocketPath)
+	}
+
 	return &Agent{
 		Config:        cfg,
 		ModuleManager: mgr,
@@ -82,6 +90,7 @@ func NewAgent(cfg *config.Config) *Agent {
 		TrivyManager: trivy.NewManager("./bin/trivy.exe"),
 		Patcher:      patcherMgr,
 		HiveManager:  hiveMgr,
+		ContainerW:   containerW,
 		Remediator:   remediator,
 	}
 }
@@ -108,6 +117,12 @@ func Run(a *Agent, ctx context.Context) error {
 	if a.HiveManager != nil {
 		a.HiveManager.Start(ctx)
 		defer a.HiveManager.Stop()
+	}
+
+	// Start Container Watcher
+	if a.ContainerW != nil {
+		a.ContainerW.Start()
+		defer a.ContainerW.Stop()
 	}
 
 	// Test Trigger: Check for updates on startup (async)

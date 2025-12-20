@@ -27,6 +27,7 @@ Nexus Node is designed to break the vendor lock-in of proprietary agents. It emb
 | **Auto-Heal** | Fix critical CVEs automatically based on policy. | ✅ |
 | **The Hive** | P2P Update Sharing & LAN Discovery (UDP/HTTP). | ✅ |
 | **Zero Trust** | mTLS Authentication & Secure Pipeline Routing. | ✅ |
+| **Cloud Native** | Container Discovery & Docker Socket Monitoring. | ✅ |
 | **OCSF Native** | All logs normalized to Open Cybersecurity Schema Framework. | ✅ |
 | **eBPF Telemetry** | Real-time kernel tracing (Linux) / Simulated (Windows). | ✅ |
 
