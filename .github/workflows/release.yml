@@ -39,14 +39,22 @@ jobs:
             BINARY_NAME=nexus.exe
           fi
           
-          mkdir -p build/
-          go build -o build/$BINARY_NAME ./cmd/nexus
+          # Create Dist Folder
+          mkdir -p dist
           
-          # Compress artifacts
+          # Build
+          go build -o dist/$BINARY_NAME ./cmd/nexus
+          
+          # Copy Config
+          cp config.yaml dist/
+          
+          # Compress from inside dist/ to avoid directory structure issues
+          mkdir -p build
+          cd dist
           if [ "$GOOS" = "windows" ]; then
-            zip -j build/nexus-${{ matrix.goos }}-${{ matrix.goarch }}.zip build/$BINARY_NAME config.yaml
+            zip ../build/nexus-${{ matrix.goos }}-${{ matrix.goarch }}.zip $BINARY_NAME config.yaml
           else
-            tar -czvf build/nexus-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz -C build $BINARY_NAME -C . config.yaml
+            tar -czvf ../build/nexus-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz $BINARY_NAME config.yaml
           fi
 
       - name: Upload Artifacts
