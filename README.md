@@ -30,7 +30,6 @@ Nexus Node is designed to break the vendor lock-in of proprietary agents. It emb
 | **Cloud Native** | K8s DaemonSet, Container Scanning, & Serverless Lite Mode. | ✅ |
 | **OCSF Native** | All logs normalized to Open Cybersecurity Schema Framework. | ✅ |
 | **eBPF Telemetry** | Real-time kernel tracing (Linux) / Simulated (Windows). | ✅ |
-| **eBPF Telemetry** | Real-time kernel tracing (Linux) / Simulated (Windows). | ✅ |
 
 ## 🏗️ Architecture
 
