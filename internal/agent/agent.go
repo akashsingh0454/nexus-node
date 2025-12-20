@@ -10,6 +10,7 @@ import (
 	"nexus/internal/engine"
 	"nexus/internal/exporter/splunk"
 	"nexus/internal/module"
+	"nexus/internal/modules/hive"
 	"nexus/internal/modules/patcher"
 	"nexus/internal/modules/trivy"
 	"nexus/internal/pipeline"
@@ -26,6 +27,7 @@ type Agent struct {
 	Telemetry     telemetry.Collector
 	TrivyManager  *trivy.Manager
 	Patcher       *patcher.Manager
+	HiveManager   *hive.Manager
 	Remediator    *engine.Remediator
 }
 
@@ -68,6 +70,9 @@ func NewAgent(cfg *config.Config) *Agent {
 	// Initialize Remediator
 	remediator := engine.NewRemediator(&cfg.Remediation, patcherMgr)
 
+	// Initialize Hive (P2P)
+	hiveMgr := hive.NewManager(cfg.Modules.Hive, cfg.Agent.Name)
+
 	return &Agent{
 		Config:        cfg,
 		ModuleManager: mgr,
@@ -76,6 +81,7 @@ func NewAgent(cfg *config.Config) *Agent {
 		// Assuming trivy is in ./bin/trivy.exe for now
 		TrivyManager: trivy.NewManager("./bin/trivy.exe"),
 		Patcher:      patcherMgr,
+		HiveManager:  hiveMgr,
 		Remediator:   remediator,
 	}
 }
@@ -96,6 +102,12 @@ func Run(a *Agent, ctx context.Context) error {
 		} else {
 			defer a.Telemetry.Stop()
 		}
+	}
+
+	// Start Hive
+	if a.HiveManager != nil {
+		a.HiveManager.Start(ctx)
+		defer a.HiveManager.Stop()
 	}
 
 	// Test Trigger: Check for updates on startup (async)

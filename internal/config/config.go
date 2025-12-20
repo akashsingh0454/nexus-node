@@ -55,11 +55,18 @@ type RouteRule struct {
 
 type ModulesConfig struct {
 	Osquery OsqueryConfig `yaml:"osquery"`
+	Hive    HiveConfig    `yaml:"hive"`
 }
 
 type OsqueryConfig struct {
 	Enabled    bool   `yaml:"enabled"`
 	BinaryPath string `yaml:"binary_path"`
+}
+
+type HiveConfig struct {
+	Enabled  bool   `yaml:"enabled"`
+	Port     int    `yaml:"port"`
+	CacheDir string `yaml:"cache_dir"`
 }
 
 type RemediationConfig struct {

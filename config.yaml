@@ -13,10 +13,12 @@ exporter:
 modules:
   osquery:
     enabled: true
-    binary_path: "./bin/osqueryd.bat"
+    binary_path: "./bin/osqueryd.exe"
+  hive:
+    enabled: true
+    port: 31337
+    cache_dir: "./cache"
 
 remediation:
   enabled: true
-  auto_patch_severity:
-    - "CRITICAL"
-    - "HIGH"
+  auto_patch_severity: ["CRITICAL", "HIGH"]
