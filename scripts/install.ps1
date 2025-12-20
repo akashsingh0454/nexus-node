@@ -78,8 +78,25 @@ if (-not (Test-Path $ExePath)) {
     exit 1
 }
 
-# 5. TODO: Service Registration (sc.exe)
-# For now, we just suggest running it.
+# 5. Service Registration
+$ServiceName = "NexusNode"
+if (Get-Service $ServiceName -ErrorAction SilentlyContinue) {
+    Write-Host "   - Service already exists. stopping..."
+    Stop-Service $ServiceName
+    sc.exe delete $ServiceName | Out-Null
+    Start-Sleep -Seconds 2
+}
+
+Write-Host "   - Registering Windows Service..."
+# Use sc.exe for robust service creation
+$BinPath = "`"$ExePath`" --config `"$InstallDir\config.yaml`""
+sc.exe create $ServiceName binPath= $BinPath start= auto displayname= "Nexus Node Agent" | Out-Null
+sc.exe description $ServiceName "Unified Security & Observability Agent" | Out-Null
+sc.exe failure $ServiceName reset= 86400 actions= restart/60000/restart/60000/restart/60000 | Out-Null
+
+Write-Host "   - Starting Service..."
+Start-Service $ServiceName
+
 Write-Host "✅ Installation Complete!" -ForegroundColor Green
-Write-Host "   To start the agent:"
-Write-Host "   & '$ExePath' --config '$InstallDir\config.yaml'" -ForegroundColor Yellow
+Write-Host "   Agent is running as a service: $ServiceName"
+Write-Host "   Status Check: & '$ExePath' --status" -ForegroundColor Yellow

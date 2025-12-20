@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -16,7 +18,13 @@ import (
 
 func main() {
 	configFile := flag.String("config", "config.yaml", "Path to configuration file")
+	statusCmd := flag.Bool("status", false, "Check agent health status")
 	flag.Parse()
+
+	if *statusCmd {
+		checkStatus()
+		return
+	}
 
 	logger.Setup()
 
@@ -56,4 +64,22 @@ func main() {
 	// Give components time to clean up
 	time.Sleep(2 * time.Second)
 	log.Println("Nexus Node shutdown complete.")
+}
+
+func checkStatus() {
+	// Default Hive port is 31337, TODO: Read from config if possible, but CLI is simple
+	resp, err := http.Get("http://localhost:31337/health")
+	if err != nil {
+		fmt.Printf("❌ Agent is NOT running or unreachable: %v\n", err)
+		os.Exit(1)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 200 {
+		fmt.Println("✅ Agent is RUNNING (Health: OK)")
+		os.Exit(0)
+	} else {
+		fmt.Printf("⚠️ Agent responded with status: %s\n", resp.Status)
+		os.Exit(1)
+	}
 }

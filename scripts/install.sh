@@ -42,6 +42,34 @@ fi
 
 chmod +x "$INSTALL_DIR/nexus"
 
+# 3. Service Registration (Systemd)
+SERVICE_FILE="/etc/systemd/system/nexus.service"
+if [ -d "/etc/systemd/system" ]; then
+    echo "   - Registering Systemd Service..."
+    cat <<EOF > $SERVICE_FILE
+[Unit]
+Description=Nexus Node Agent
+After=network.target
+
+[Service]
+ExecStart=$INSTALL_DIR/nexus --config $INSTALL_DIR/config.yaml
+Restart=always
+RestartSec=60
+User=root
+WorkingDirectory=$INSTALL_DIR
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl daemon-reload
+    systemctl enable nexus
+    systemctl restart nexus
+    echo "   - Service started."
+else
+    echo "⚠️ Systemd not found. Manual start required."
+fi
+
 echo "✅ Installation Complete!"
 echo "   Location: $INSTALL_DIR/nexus"
-echo "   Run with: $INSTALL_DIR/nexus --config $INSTALL_DIR/config.yaml"
+echo "   Status Check: $INSTALL_DIR/nexus --status"
