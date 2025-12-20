@@ -25,6 +25,8 @@ Nexus Node is designed to break the vendor lock-in of proprietary agents. It emb
 | **Config as Code** | Configure via YAML, Env Vars, or remote URL. | ✅ |
 | **Safe Patching** | Wraps `winget`/`apt` with CPU & Time safety checks. | ✅ |
 | **Auto-Heal** | Fix critical CVEs automatically based on policy. | ✅ |
+| **The Hive** | P2P Update Sharing & LAN Discovery (UDP/HTTP). | ✅ |
+| **Zero Trust** | mTLS Authentication & Secure Pipeline Routing. | ✅ |
 | **OCSF Native** | All logs normalized to Open Cybersecurity Schema Framework. | ✅ |
 | **eBPF Telemetry** | Real-time kernel tracing (Linux) / Simulated (Windows). | ✅ |
 
