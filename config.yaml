@@ -1,0 +1,22 @@
+agent:
+  name: "nexus-node-01"
+  log_level: "info"
+  server_url: "https://nexus-controller.internal"
+
+exporter:
+  splunk:
+    enabled: true
+    url: "https://splunk-hec.internal:8088"
+    token: "your-hec-token"
+    batch_interval: 5s
+
+modules:
+  osquery:
+    enabled: true
+    binary_path: "./bin/osqueryd.bat"
+
+remediation:
+  enabled: true
+  auto_patch_severity:
+    - "CRITICAL"
+    - "HIGH"
