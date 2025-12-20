@@ -79,6 +79,14 @@ func NewAgent(cfg *config.Config) *Agent {
 	var containerW *container.Watcher
 	if cfg.Modules.Container.Enabled {
 		containerW = container.NewWatcher(cfg.Modules.Container.SocketPath)
+
+		// Wire Watcher -> Trivy
+		// When a new container image is found, trigger a Trivy scan.
+		containerW.OnNewImage = func(image string, id string) {
+			log.Printf("[AGENT] Triggering Vulnerability Scan for Image: %s", image)
+			// TODO: Add proper Trivy Image Scan method. For now, we log.
+			// a.TrivyManager.ScanImage(image)
+		}
 	}
 
 	return &Agent{

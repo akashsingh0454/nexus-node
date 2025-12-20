@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nexus-node.fullname" . }}-config
+  labels:
+    {{- include "nexus-node.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    agent:
+      name: {{ .Values.config.agentName }}
+    
+    pipeline:
+      exporters:
+        splunk:
+          enabled: {{ .Values.config.splunk.enabled }}
+          url: {{ .Values.config.splunk.url }}
+          token: {{ .Values.config.splunk.token }}
+    
+    modules:
+      hive:
+        enabled: {{ .Values.config.hive.enabled }}
+        port: {{ .Values.config.hive.port }}
+        cache_dir: "/tmp/nexus-cache"
+      container:
+        enabled: true
+        socket_path: "/var/run/docker.sock"
+    
+    remediation:
+      enabled: false # Careful with auto-remediation in K8s!

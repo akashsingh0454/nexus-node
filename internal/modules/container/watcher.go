@@ -23,6 +23,10 @@ type Watcher struct {
 	SocketPath string
 	Client     *http.Client
 	StopChan   chan struct{}
+
+	// State
+	seenImages map[string]bool
+	OnNewImage func(image string, id string)
 }
 
 func NewWatcher(socketPath string) *Watcher {
@@ -42,7 +46,8 @@ func NewWatcher(socketPath string) *Watcher {
 				},
 			},
 		},
-		StopChan: make(chan struct{}),
+		StopChan:   make(chan struct{}),
+		seenImages: make(map[string]bool),
 	}
 }
 
@@ -83,8 +88,14 @@ func (w *Watcher) scanContainers() {
 	}
 
 	for _, c := range containers {
-		// Log discovered containers (In future, map to PIDs or OCSF)
-		// log.Printf("[CONTAINER] Discovered: %s (%s)", c.Names[0], c.Image)
-		_ = c // Suppress unused for now
+		// Detect new images
+		if !w.seenImages[c.Image] {
+			log.Printf("[CONTAINER] New Image Discovered: %s (%s)", c.Image, c.ID[:12])
+			w.seenImages[c.Image] = true
+
+			if w.OnNewImage != nil {
+				go w.OnNewImage(c.Image, c.ID)
+			}
+		}
 	}
 }

@@ -1,0 +1,43 @@
+image:
+  repository: your-repo/nexus-node
+  pullPolicy: IfNotPresent
+  tag: "v2.0.0"
+
+config:
+  agentName: "$(HOSTNAME)"
+  splunk:
+    enabled: false
+    url: ""
+    token: ""
+  hive:
+    enabled: true
+    port: 31337
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+volumeMounts:
+  - name: docker-socket
+    mountPath: /var/run/docker.sock
+  - name: procdir
+    mountPath: /host/proc
+    readOnly: true
+  - name: sysdir
+    mountPath: /host/sys
+    readOnly: true
+
+volumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+  - name: procdir
+    hostPath:
+      path: /proc
+  - name: sysdir
+    hostPath:
+      path: /sys
