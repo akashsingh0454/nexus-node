@@ -17,6 +17,17 @@ Nexus Node is designed to break the vendor lock-in of proprietary agents. It emb
 -   **🛠️ Doer**: Safe, policy-driven patching using native OS package managers (`winget`, `apt`, `softwareupdate`).
 -   **❤️ Healer**: Auto-remediation engine that fixes critical vulnerabilities automatically based on policy.
 
+## ✨ Features
+
+| Feature | Description | Status |
+| :--- | :--- | :--- |
+| **Unified Agent** | Single binary replacing Splunk Fwd, Tanium, Qualys. | ✅ |
+| **Config as Code** | Configure via YAML, Env Vars, or remote URL. | ✅ |
+| **Safe Patching** | Wraps `winget`/`apt` with CPU & Time safety checks. | ✅ |
+| **Auto-Heal** | Fix critical CVEs automatically based on policy. | ✅ |
+| **OCSF Native** | All logs normalized to Open Cybersecurity Schema Framework. | ✅ |
+| **eBPF Telemetry** | Real-time kernel tracing (Linux) / Simulated (Windows). | ✅ |
+
 ## 🏗️ Architecture
 
 Nexus Node follows a "Chassis" architecture. The core binary is a lightweight orchestrator that manages specialized sub-modules.
@@ -33,35 +44,31 @@ graph TD
     H -->|Trigger| E
 ```
 
-## 📥 Installation
+## 📥 Installation & Deployment
 
-**Nexus Node** is distributed as a single static binary. You do **not** need to build it yourself.
-
-### Quick Install (Production)
+### Mass Deployment (Enterprise)
+For standard deployment, host a `config.yaml` on your internal network (e.g., S3, Sharepoint) and use the installer arguments.
 
 **Windows (PowerShell)**:
 ```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YOUR_USERNAME/nexus-node/main/scripts/install.ps1'))
+$Params = @{ ConfigUrl = "https://internal.corp/nexus-config.yaml" }; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YOUR_USERNAME/nexus-node/main/scripts/install.ps1')) $Params
 ```
 
 **Linux / macOS**:
 ```bash
-curl -sfL https://raw.githubusercontent.com/YOUR_USERNAME/nexus-node/main/scripts/install.sh | sudo bash
+curl -sfL https://raw.githubusercontent.com/YOUR_USERNAME/nexus-node/main/scripts/install.sh | sudo ConfigUrl="https://internal.corp/nexus-config.yaml" bash
 ```
+
+### Configuration (Environment Variables)
+You can override `config.yaml` settings using Environment Variables (useful for Kubernetes/Docker):
+
+-   `NEXUS_AGENT_NAME` -> Overrides agent name.
+-   `NEXUS_SPLUNK_URL` -> Overrides Splunk HEC URL.
+-   `NEXUS_SPLUNK_TOKEN` -> Overrides Splunk HEC Token.
 
 ## ⚡ Usage
 
-1.  **Configure**: the installer places a default `config.yaml` in the install directory (e.g., `C:\Program Files\NexusNode`).
-    ```yaml
-    agent:
-      name: "node-01"
-    exporter:
-      splunk:
-        enabled: true
-    remediation:
-      enabled: true
-    ```
-2.  **Run**:
+1.  **Run Manually**:
     ```bash
     # Windows
     & "C:\Program Files\NexusNode\nexus.exe"
@@ -69,7 +76,7 @@ curl -sfL https://raw.githubusercontent.com/YOUR_USERNAME/nexus-node/main/script
     # Linux
     /opt/nexus-node/nexus
     ```
-3.  **Logs**: Check functionality.
+2.  **Logs**: Check functionality.
     -   Startup: `Agent Chassis initialized...`
     -   Dry Run Patching: `Patcher: ListUpdates completed...`
     -   Remediation: `[REMEDIATION] Attempting to fix...`

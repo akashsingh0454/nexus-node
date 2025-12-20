@@ -56,5 +56,18 @@ func LoadConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// Environment Variable Overrides (Cloud-Native / Mass Deployment)
+	if envName := os.Getenv("NEXUS_AGENT_NAME"); envName != "" {
+		cfg.Agent.Name = envName
+	}
+	if envSplunkURL := os.Getenv("NEXUS_SPLUNK_URL"); envSplunkURL != "" {
+		cfg.Exporter.Splunk.URL = envSplunkURL
+		cfg.Exporter.Splunk.Enabled = true
+	}
+	if envSplunkToken := os.Getenv("NEXUS_SPLUNK_TOKEN"); envSplunkToken != "" {
+		cfg.Exporter.Splunk.Token = envSplunkToken
+	}
+
 	return &cfg, nil
 }

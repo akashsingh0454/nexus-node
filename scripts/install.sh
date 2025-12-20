@@ -34,6 +34,12 @@ curl -L -o /tmp/nexus.tar.gz "$DOWNLOAD_URL"
 tar -xzf /tmp/nexus.tar.gz -C "$INSTALL_DIR"
 rm /tmp/nexus.tar.gz
 
+# Custom Config Override
+if [ ! -z "$ConfigUrl" ]; then
+    echo "   - Fetching custom configuration from: $ConfigUrl"
+    curl -L -o "$INSTALL_DIR/config.yaml" "$ConfigUrl" || echo "⚠️ Failed to download custom config. Using default."
+fi
+
 chmod +x "$INSTALL_DIR/nexus"
 
 echo "✅ Installation Complete!"

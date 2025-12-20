@@ -9,6 +9,10 @@ Downloads the latest release from GitHub, extracts it to C:\Program Files\NexusN
 powershell -ExecutionPolicy Bypass -File install.ps1
 #>
 
+param(
+    [string]$ConfigUrl = ""
+)
+
 $Repo = "YOUR_USERNAME/nexus-node" # PLACEHOLDER: Update this after forking!
 $InstallDir = "C:\Program Files\NexusNode"
 $Version = "latest"
@@ -56,6 +60,17 @@ Remove-Item $ZipPath
 
 # 4. Configure
 Write-Host "   - Installed to: $InstallDir"
+
+# Custom Config Override
+if ($ConfigUrl -ne "") {
+    Write-Host "   - Fetching custom configuration from: $ConfigUrl"
+    try {
+        Invoke-WebRequest -Uri $ConfigUrl -OutFile "$InstallDir\config.yaml"
+    } catch {
+        Write-Warning "Failed to download custom config. Using default."
+    }
+}
+
 $ExePath = "$InstallDir\nexus.exe"
 
 if (-not (Test-Path $ExePath)) {
