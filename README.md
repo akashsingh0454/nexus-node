@@ -33,37 +33,41 @@ graph TD
     H -->|Trigger| E
 ```
 
-## 🛠️ Installation
+## 📥 Installation
 
-### Prerequisites
--   **Go 1.21+** (for building from source)
--   **Osquery** installed or embedded in `./bin`
--   **Trivy** installed or embedded in `./bin`
--   **Winget** (Windows only)
+**Nexus Node** is distributed as a single static binary. You do **not** need to build it yourself.
 
-### Build
+### Quick Install (Production)
+
+**Windows (PowerShell)**:
+```powershell
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://raw.githubusercontent.com/YOUR_USERNAME/nexus-node/main/scripts/install.ps1'))
+```
+
+**Linux / macOS**:
 ```bash
-go mod tidy
-go build -o nexus.exe ./cmd/nexus
+curl -sfL https://raw.githubusercontent.com/YOUR_USERNAME/nexus-node/main/scripts/install.sh | sudo bash
 ```
 
 ## ⚡ Usage
 
-1.  **Configure**: Edit `config.yaml`.
+1.  **Configure**: the installer places a default `config.yaml` in the install directory (e.g., `C:\Program Files\NexusNode`).
     ```yaml
     agent:
       name: "node-01"
     exporter:
       splunk:
         enabled: true
-        url: "https://splunk-hec:8088"
     remediation:
       enabled: true
-      auto_patch_severity: ["CRITICAL"]
     ```
 2.  **Run**:
     ```bash
-    ./nexus.exe --config config.yaml
+    # Windows
+    & "C:\Program Files\NexusNode\nexus.exe"
+    
+    # Linux
+    /opt/nexus-node/nexus
     ```
 3.  **Logs**: Check functionality.
     -   Startup: `Agent Chassis initialized...`
