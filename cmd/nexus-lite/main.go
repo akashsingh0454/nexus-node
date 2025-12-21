@@ -32,7 +32,10 @@ func main() {
 	}
 
 	// 3. Setup Router
-	router := pipeline.NewRouter(config.PipelineConfig{}, splunkClient)
+	router := pipeline.NewRouter(config.PipelineConfig{})
+	if splunkClient != nil {
+		router.AddDestination("splunk_lite", splunkClient)
+	}
 
 	// 4. Gather Telemetry (Simulated Snapshot)
 	evt := ocsf.NewInventoryEvent(ocsf.Device{

@@ -9,6 +9,7 @@ import (
 	"nexus/internal/config"
 	"nexus/internal/engine"
 	"nexus/internal/exporter/splunk"
+	"nexus/internal/exporter/wazuh"
 	"nexus/internal/module"
 	"nexus/internal/modules/container"
 	"nexus/internal/modules/hive"
@@ -61,7 +62,23 @@ func NewAgent(cfg *config.Config) *Agent {
 	}
 
 	// 3. Initialize Pipeline Router
-	router := pipeline.NewRouter(cfg.Pipeline, splunkClient)
+	router := pipeline.NewRouter(cfg.Pipeline)
+
+	if splunkClient != nil {
+		router.AddDestination("splunk_main", splunkClient)
+	}
+
+	// 4. Initialize Wazuh Exporter
+	if cfg.Pipeline.Exporters.Wazuh.Enabled {
+		wazuhClient := wazuh.NewClient(
+			cfg.Pipeline.Exporters.Wazuh.Host,
+			cfg.Pipeline.Exporters.Wazuh.Port,
+			cfg.Pipeline.Exporters.Wazuh.Protocol,
+		)
+		router.AddDestination("wazuh_main", wazuhClient)
+		log.Printf("[AGENT] Wazuh Exporter Enabled: %s:%d (%s)",
+			cfg.Pipeline.Exporters.Wazuh.Host, cfg.Pipeline.Exporters.Wazuh.Port, cfg.Pipeline.Exporters.Wazuh.Protocol)
+	}
 
 	// Initialize Telemetry
 	tel := telemetry.NewSimulatedCollector()

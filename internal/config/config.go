@@ -38,7 +38,8 @@ type PipelineConfig struct {
 }
 
 type ExportersMap struct {
-	Splunk SplunkConfig `yaml:"splunk_main"` // Hardcoded key for now to match yaml
+	Splunk SplunkConfig `yaml:"splunk"`
+	Wazuh  WazuhConfig  `yaml:"wazuh"`
 }
 
 type SplunkConfig struct {
@@ -46,6 +47,13 @@ type SplunkConfig struct {
 	URL           string        `yaml:"url"`
 	Token         string        `yaml:"token"`
 	BatchInterval time.Duration `yaml:"batch_interval"`
+}
+
+type WazuhConfig struct {
+	Enabled  bool   `yaml:"enabled"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	Protocol string `yaml:"protocol"`
 }
 
 type RouteRule struct {

@@ -4,7 +4,7 @@ import (
 	"log"
 
 	"nexus/internal/config"
-	"nexus/internal/exporter/splunk" // For now still tightly coupled, but logic separated
+	// For now still tightly coupled, but logic separated
 )
 
 // Destination represents an output sink (e.g. Splunk).
@@ -18,19 +18,16 @@ type Router struct {
 	Destinations map[string]Destination
 }
 
-func NewRouter(cfg config.PipelineConfig, splunkClient *splunk.Client) *Router {
-	dests := make(map[string]Destination)
-
-	// Register destinations
-	// In a real generic implementation, this would be dynamic factories.
-	// For now, we wire up what we have.
-	if splunkClient != nil {
-		dests["splunk_main"] = splunkClient
-	}
-
+func NewRouter(cfg config.PipelineConfig) *Router {
 	return &Router{
 		Config:       cfg,
-		Destinations: dests,
+		Destinations: make(map[string]Destination),
+	}
+}
+
+func (r *Router) AddDestination(name string, dest Destination) {
+	if dest != nil {
+		r.Destinations[name] = dest
 	}
 }
 

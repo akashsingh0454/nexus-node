@@ -28,6 +28,7 @@ Nexus Node is designed to break the vendor lock-in of proprietary agents. It emb
 | **The Hive** | P2P Update Sharing & LAN Discovery (UDP/HTTP). | ✅ |
 | **Zero Trust** | mTLS Authentication & Secure Pipeline Routing. | ✅ |
 | **Cloud Native** | K8s DaemonSet, Container Scanning, & Serverless Lite Mode. | ✅ |
+| **Legacy SIEM** | Direct Syslog/TCP streaming to Wazuh Managers (RFC 5424). | ✅ |
 | **OCSF Native** | All logs normalized to Open Cybersecurity Schema Framework. | ✅ |
 | **eBPF Telemetry** | Real-time kernel tracing (Linux) / Simulated (Windows). | ✅ |
 

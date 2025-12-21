@@ -6,9 +6,14 @@ agent:
 exporter:
   splunk:
     enabled: true
-    url: "https://splunk-hec.internal:8088"
-    token: "your-hec-token"
-    batch_interval: 5s
+    url: "https://splunk-hec.example.com:8088"
+    token: "00000000-0000-0000-0000-000000000000"
+  wazuh:
+    enabled: true
+    host: "127.0.0.1" # Wazuh Manager IP
+    port: 514
+    protocol: "udp"
+  batch_interval: 5s
 
 modules:
   osquery:
