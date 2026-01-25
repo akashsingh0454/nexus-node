@@ -10,6 +10,7 @@ import (
 	"nexus/internal/engine"
 	"nexus/internal/exporter/splunk"
 	"nexus/internal/exporter/wazuh"
+	"nexus/internal/exporter/webhook"
 	"nexus/internal/module"
 	"nexus/internal/modules/container"
 	"nexus/internal/modules/hive"
@@ -78,6 +79,18 @@ func NewAgent(cfg *config.Config) *Agent {
 		router.AddDestination("wazuh_main", wazuhClient)
 		log.Printf("[AGENT] Wazuh Exporter Enabled: %s:%d (%s)",
 			cfg.Pipeline.Exporters.Wazuh.Host, cfg.Pipeline.Exporters.Wazuh.Port, cfg.Pipeline.Exporters.Wazuh.Protocol)
+	}
+
+	// 5. Initialize Webhook Exporter
+	if cfg.Pipeline.Exporters.Webhook.Enabled {
+		webhookClient := webhook.NewClient(
+			cfg.Pipeline.Exporters.Webhook.URL,
+			cfg.Pipeline.Exporters.Webhook.Method,
+			cfg.Pipeline.Exporters.Webhook.Headers,
+			cfg.Pipeline.Exporters.Webhook.Template,
+		)
+		router.AddDestination("webhook_main", webhookClient)
+		log.Printf("[AGENT] Webhook Exporter Enabled: %s", cfg.Pipeline.Exporters.Webhook.URL)
 	}
 
 	// Initialize Telemetry

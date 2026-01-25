@@ -38,8 +38,9 @@ type PipelineConfig struct {
 }
 
 type ExportersMap struct {
-	Splunk SplunkConfig `yaml:"splunk"`
-	Wazuh  WazuhConfig  `yaml:"wazuh"`
+	Splunk  SplunkConfig  `yaml:"splunk"`
+	Wazuh   WazuhConfig   `yaml:"wazuh"`
+	Webhook WebhookConfig `yaml:"webhook"`
 }
 
 type SplunkConfig struct {
@@ -54,6 +55,14 @@ type WazuhConfig struct {
 	Host     string `yaml:"host"`
 	Port     int    `yaml:"port"`
 	Protocol string `yaml:"protocol"`
+}
+
+type WebhookConfig struct {
+	Enabled  bool              `yaml:"enabled"`
+	URL      string            `yaml:"url"`
+	Method   string            `yaml:"method"`
+	Headers  map[string]string `yaml:"headers"`
+	Template string            `yaml:"template"`
 }
 
 type RouteRule struct {
