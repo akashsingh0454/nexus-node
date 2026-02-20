@@ -1,0 +1,32 @@
+type Agent {
+  id: ID!
+  hostname: String!
+  lastSeen: String!
+  version: String!
+  status: String!
+}
+
+type DestinationConfig {
+  id: ID!
+  name: String!
+  type: String!
+  url: String!
+  enabled: Boolean!
+}
+
+type Query {
+  agents: [Agent!]!
+  destinations: [DestinationConfig!]!
+}
+
+input NewDestination {
+  name: String!
+  type: String!
+  url: String!
+  headers: String
+}
+
+type Mutation {
+  createDestination(input: NewDestination!): DestinationConfig!
+  toggleDestination(id: ID!, enabled: Boolean!): DestinationConfig!
+}

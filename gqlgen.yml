@@ -1,0 +1,15 @@
+schema:
+  - internal/manager/graph/*.graphqls
+
+exec:
+  filename: internal/manager/graph/generated.go
+  package: graph
+
+model:
+  filename: internal/manager/graph/model/models_gen.go
+  package: model
+
+resolver:
+  layout: follow-schema
+  dir: internal/manager/graph
+  package: graph

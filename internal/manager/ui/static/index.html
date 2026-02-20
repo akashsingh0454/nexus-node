@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Control Plane</title>
+    <style>
+        :root {
+            --bg-color: #0b0c10;
+            --surface: #1f2833;
+            --primary: #66fcf1;
+            --primary-dim: rgba(102, 252, 241, 0.2);
+            --secondary: #45a29e;
+            --text-main: #c5c6c7;
+            --text-heading: #ffffff;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            background-image: 
+                linear-gradient(rgba(102, 252, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(102, 252, 241, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Sidebar Glassmorphism */
+        sidebar {
+            width: 260px;
+            background: rgba(31, 40, 51, 0.6);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(102, 252, 241, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px 0;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .brand {
+            padding: 0 20px 30px;
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 20px;
+        }
+
+        .brand::before {
+            content: '';
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .nav-item {
+            padding: 12px 25px;
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--primary-dim);
+            color: var(--primary);
+            border-left: 3px solid var(--primary);
+        }
+
+        /* Main Content Area */
+        main {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        h1 {
+            color: var(--text-heading);
+            font-weight: 300;
+            font-size: 28px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(102, 252, 241, 0.3);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        /* Glass Cards */
+        .card {
+            background: rgba(31, 40, 51, 0.4);
+            border: 1px solid rgba(102, 252, 241, 0.1);
+            border-radius: 12px;
+            padding: 25px;
+            transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-color: rgba(102, 252, 241, 0.3);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 10px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            color: var(--text-heading);
+            font-weight: 600;
+        }
+
+        /* Status Badge */
+        .status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .status.online { background: rgba(46, 204, 113, 0.1); color: var(--success); border: 1px solid rgba(46, 204, 113, 0.3); }
+        .status.offline { background: rgba(231, 76, 60, 0.1); color: var(--danger); border: 1px solid rgba(231, 76, 60, 0.3); }
+
+        /* Detail List */
+        .detail-list { padding: 0; margin: 0; list-style: none; }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 13px;
+        }
+        .detail-label { color: #888; }
+        .detail-value { color: var(--primary); font-family: monospace; }
+
+        /* Switches for Integrations */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            transition: .4s;
+            border-radius: 34px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px; width: 16px;
+            left: 4px; bottom: 3px;
+            background-color: #888;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary-dim); border-color: var(--primary); }
+        input:checked + .slider:before {
+            transform: translateX(24px);
+            background-color: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        /* Pulsing Glow Effect for active connections */
+        .ping {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(102, 252, 241, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(102, 252, 241, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(102, 252, 241, 0); }
+        }
+
+        /* Views */
+        .view { display: none; }
+        .view.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Top Bar */
+        .topbar {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 13px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <sidebar>
+        <div class="brand">NEXUS</div>
+        <div class="nav-item active" onclick="switchView('overview')">Overview Map</div>
+        <div class="nav-item" onclick="switchView('agents')">Fleet Telemetry</div>
+        <div class="nav-item" onclick="switchView('integrations')">Integrations</div>
+    </sidebar>
+
+    <main>
+        <div class="topbar">
+            <span>Control Plane Status: <span class="status online">SYS.OK</span></span>
+            <div class="ping"></div>
+        </div>
+
+        <!-- OVERVIEW VIEW -->
+        <div id="overview" class="view active">
+            <h1>Command Overview</h1>
+            <div class="dashboard-grid">
+                <div class="card" style="grid-column: span 2; display: flex; align-items: center; justify-content: space-around; padding: 40px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; color: var(--primary); font-weight: 200;" id="total-agents">0</div>
+                        <div style="color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Active Nodes</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 48px; color: var(--success); font-weight: 200;" id="total-integrations">0</div>
+                        <div style="color: #888; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Streams Open</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AGENTS VIEW -->
+        <div id="agents" class="view">
+            <h1>Fleet Telemetry Nodes</h1>
+            <div class="dashboard-grid" id="agent-grid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+        <!-- INTEGRATIONS VIEW -->
+        <div id="integrations" class="view">
+            <h1>Authorized Data Streams</h1>
+            <p style="color: #888; margin-bottom: 30px; font-size: 14px; max-width: 600px;">
+                Toggle access below. When activated, all Nexus Nodes immediately spin up TLS sessions 
+                and route authorized data directly to the vendor's ingest endpoints.
+            </p>
+            <div class="dashboard-grid" id="integration-grid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- UI Logic ---
+        function switchView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(v => v.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // --- GraphQL API Logic ---
+        const API_URL = '/query';
+
+        async function fetchState() {
+            const query = `
+                query {
+                    agents { id hostname lastSeen version status }
+                    destinations { id name type url enabled }
+                }
+            `;
+            
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                const { data } = await res.json();
+                renderAgents(data.agents);
+                renderIntegrations(data.destinations);
+                
+                // Update stats
+                document.getElementById('total-agents').innerText = data.agents.length;
+                document.getElementById('total-integrations').innerText = data.destinations.filter(d => d.enabled).length;
+
+            } catch (err) {
+                console.error("Failed to fetch state:", err);
+            }
+        }
+
+        async function toggleIntegration(id, enabled) {
+            const query = `
+                mutation {
+                    toggleDestination(id: "${id}", enabled: ${enabled}) { id enabled }
+                }
+            `;
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+            fetchState(); // refresh
+        }
+
+        // --- Renderers ---
+        function renderAgents(agents) {
+            const grid = document.getElementById('agent-grid');
+            grid.innerHTML = agents.map(a => `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">${a.hostname}</div>
+                        <div class="status ${a.status.toLowerCase()}">${a.status}</div>
+                    </div>
+                    <ul class="detail-list">
+                        <li class="detail-row">
+                            <span class="detail-label">Node ID</span>
+                            <span class="detail-value">${a.id}</span>
+                        </li>
+                        <li class="detail-row">
+                            <span class="detail-label">Version</span>
+                            <span class="detail-value">${a.version}</span>
+                        </li>
+                        <li class="detail-row">
+                            <span class="detail-label">Last Ping</span>
+                            <span class="detail-value">${new Date(a.lastSeen).toLocaleTimeString()}</span>
+                        </li>
+                    </ul>
+                </div>
+            `).join('');
+        }
+
+        function renderIntegrations(dests) {
+            const grid = document.getElementById('integration-grid');
+            grid.innerHTML = dests.map(d => `
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">${d.name} <span style="font-size: 12px; color: #888;">[${d.type}]</span></div>
+                        <label class="switch">
+                            <input type="checkbox" ${d.enabled ? 'checked' : ''} onchange="toggleIntegration('${d.id}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <ul class="detail-list">
+                        <li class="detail-row">
+                            <span class="detail-label">Endpoint URL</span>
+                            <span class="detail-value" style="word-break: break-all;">${d.url}</span>
+                        </li>
+                        <li class="detail-row">
+                            <span class="detail-label">Stream Status</span>
+                            <span class="status ${d.enabled ? 'online' : 'offline'}" style="margin: 0; padding: 2px 8px; font-size:10px;">
+                                ${d.enabled ? 'Streaming' : 'Isolated'}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            `).join('');
+        }
+
+        // Init
+        fetchState();
+        setInterval(fetchState, 5000); // Poll every 5s for demo
+
+    </script>
+</body>
+</html>

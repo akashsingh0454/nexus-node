@@ -33,6 +33,7 @@ type Agent struct {
 	HiveManager   *hive.Manager
 	ContainerW    *container.Watcher
 	Remediator    *engine.Remediator
+	SyncManager   *SyncManager
 }
 
 // NewAgent creates a new instance of the Nexus Node Agent.
@@ -119,6 +120,9 @@ func NewAgent(cfg *config.Config) *Agent {
 		}
 	}
 
+	// Initialize SyncManager
+	syncMgr := NewSyncManager(cfg.Agent.ControlPlaneURL, cfg.Agent.Name, router)
+
 	return &Agent{
 		Config:        cfg,
 		ModuleManager: mgr,
@@ -130,6 +134,7 @@ func NewAgent(cfg *config.Config) *Agent {
 		HiveManager:  hiveMgr,
 		ContainerW:   containerW,
 		Remediator:   remediator,
+		SyncManager:  syncMgr,
 	}
 }
 
@@ -161,6 +166,12 @@ func Run(a *Agent, ctx context.Context) error {
 	if a.ContainerW != nil {
 		a.ContainerW.Start()
 		defer a.ContainerW.Stop()
+	}
+
+	// Start SyncManager
+	if a.SyncManager != nil {
+		a.SyncManager.Start(ctx)
+		defer a.SyncManager.Stop()
 	}
 
 	// Test Trigger: Check for updates on startup (async)

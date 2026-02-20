@@ -2,6 +2,7 @@ package pipeline
 
 import (
 	"log"
+	"sync"
 
 	"nexus/internal/config"
 	// For now still tightly coupled, but logic separated
@@ -15,6 +16,7 @@ type Destination interface {
 // Router handles data governance and routing.
 type Router struct {
 	Config       config.PipelineConfig
+	mu           sync.RWMutex
 	Destinations map[string]Destination
 }
 
@@ -27,12 +29,18 @@ func NewRouter(cfg config.PipelineConfig) *Router {
 
 func (r *Router) AddDestination(name string, dest Destination) {
 	if dest != nil {
+		r.mu.Lock()
 		r.Destinations[name] = dest
+		r.mu.Unlock()
 	}
 }
 
-// Route directs an event to the appropriate destinations based on policy.
-// It accepts interface{} to allow routing of ANY data structure (OCSF, CIS, Custom).
+func (r *Router) ReplaceDestinations(newDests map[string]Destination) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.Destinations = newDests
+}
+
 func (r *Router) Route(event interface{}) {
 	// Determine event "Type" (simplified taxonomy)
 	// - Inventory
@@ -42,6 +50,9 @@ func (r *Router) Route(event interface{}) {
 	// For now, let's just broadcast to all configured routes.
 
 	// TODO: Implement sophisticated type matching using reflection or type assertion.
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 
 	for name, dest := range r.Destinations {
 		// Governance Check: Should this destination receive this data?

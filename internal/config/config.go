@@ -16,9 +16,10 @@ type Config struct {
 }
 
 type AgentConfig struct {
-	Name      string `yaml:"name"`
-	LogLevel  string `yaml:"log_level"`
-	ServerURL string `yaml:"server_url"`
+	Name            string `yaml:"name"`
+	DataDir         string `yaml:"data_dir"`
+	LogFile         string `yaml:"log_file"`
+	ControlPlaneURL string `yaml:"control_plane_url"`
 }
 
 type SecurityConfig struct {
