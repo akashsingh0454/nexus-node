@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+// Nexus Open Standard (NOS)
+// Version: 1.0.0
+// Description: Core Telemetry Schema for Nexus Agent Integration 
+
+package nos.v1;
+option go_package = "nexus/pkg/nos/v1";
+
+// ---------------------------------------------------------
+// Core Telemetry Envelope
+// Every event emitted by a Nexus Node is wrapped in a NOSEvent.
+// ---------------------------------------------------------
+message NOSEvent {
+  // Common Metadata
+  string id = 1;                     // Unique Event ID (UUID v4)
+  int64 timestamp = 2;               // Unix timestamp (nanoseconds)
+  
+  // Origin Data
+  AgentContext agent = 3;            // Information about the emitting Nexus Node
+  
+  // Payload (OneOf pattern ensures an event is exactly one type)
+  oneof payload {
+    ProcessActivity process = 10;
+    NetworkActivity network = 11;
+    VulnerabilityScan vulnerability = 12;
+    // Reserved for future standard expansions
+  }
+}
+
+// ---------------------------------------------------------
+// Entity Contexts (Re-usable Definitions)
+// ---------------------------------------------------------
+
+message AgentContext {
+  string uuid = 1;                   // Agent's cryptographic identity UUID
+  string hostname = 2;               // Hostname of the monitored asset
+  string os_name = 3;                // Operating System (e.g., "Linux", "Windows")
+  string ip_address = 4;             // Primary IP address
+  map<string, string> labels = 5;    // Key-Value tags (e.g., "env":"prod", "cluster":"k8s-main")
+}
+
+message UserContext {
+  string username = 1;
+  int32 uid = 2;
+  int32 gid = 3;
+}
+
+message ProcessContext {
+  int32 pid = 1;
+  int32 ppid = 2;
+  string executable_path = 3;
+  string command_line = 4;
+  string sha256_hash = 5;            // Hash of the binary on disk 
+}
+
+// ---------------------------------------------------------
+// Activity Payloads
+// ---------------------------------------------------------
+
+// ProcessActivity describes execution events (spawn, exit)
+message ProcessActivity {
+  enum ActionType {
+    UNKNOWN = 0;
+    EXECUTE = 1;
+    TERMINATE = 2;
+  }
+  
+  ActionType action = 1;
+  ProcessContext process = 2;
+  ProcessContext parent = 3;
+  UserContext user = 4;
+}
+
+// NetworkActivity describes inbound/outbound connections
+message NetworkActivity {
+  enum ActionType {
+    UNKNOWN = 0;
+    CONNECT = 1;
+    ACCEPT = 2;
+    BLOCK = 3; // eBPF blocked connection
+  }
+
+  ActionType action = 1;
+  string src_ip = 2;
+  int32 src_port = 3;
+  string dst_ip = 4;
+  int32 dst_port = 5;
+  string protocol = 6;       // "TCP", "UDP"
+  ProcessContext process = 7;// The process responsible for the connection
+}
+
+// VulnerabilityScan describes the result of an internal scanner (e.g., Trivy)
+message VulnerabilityScan {
+  string cve_id = 1;                 // The CVE ID (e.g., "CVE-2021-44228")
+  string severity = 2;               // CRITICAL, HIGH, MEDIUM, LOW
+  string package_name = 3;           // The vulnerable library/package
+  string installed_version = 4;      // Current version
+  string fixed_version = 5;          // Version containing the patch
+  string title = 6;                  // Description of the CVE
+  string target = 7;                 // Where found (e.g., "/usr/bin/tar" or "alpine:latest")
+}

@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+// Nexus Open Standard (NOS)
+// Version: 1.0.0
+// Description: Open RPC Contract for Third-Party Integrations
+
+package nos.v1;
+option go_package = "nexus/pkg/nos/v1";
+
+import "nos_schema.proto";
+
+// ---------------------------------------------------------
+// The Nexus Data Streaming Service
+// Third-party plugins connect to the Agent via this service 
+// to subscribe to telemetry streams.
+// ---------------------------------------------------------
+
+service StreamService {
+  // Subscribe opens a continuous stream of events from the Agent 
+  // into the third-party Plugin (e.g., Crowdstrike).
+  rpc Subscribe (StreamRequest) returns (stream NOSEvent);
+}
+
+message StreamRequest {
+  string plugin_name = 1;     // e.g., "CrowdstrikeFalcon"
+  string filter_query = 2;    // Optional BPF-like filter (e.g., "event.type == 'process'")
+}
+
+// ---------------------------------------------------------
+// The Nexus Action Service 
+// Allows third-party SOAR/EDR vendors to issue commands back 
+// to the Agent to remediate threats (e.g., Kill Process).
+// ---------------------------------------------------------
+
+service ActionService {
+  // ExecuteAction allows a vendor to trigger an Agent response.
+  rpc ExecuteAction (ActionRequest) returns (ActionResponse);
+}
+
+message ActionRequest {
+  enum ActionType {
+    UNKNOWN = 0;
+    KILL_PROCESS = 1;         // Send SIGKILL to the specified PID
+    QUARANTINE_FILE = 2;      // Move file to .quarantine folder
+    PATCH_PACKAGE = 3;        // Run the agent's OS patch mechanism on a vulnerable library
+  }
+
+  ActionType action = 1;
+  string target_id = 2;       // The PID, File Path, or Package Name
+  string authorization = 3;   // Cryptographic token proving vendor permission
+}
+
+message ActionResponse {
+  bool success = 1;
+  string message = 2;         // Descriptive result (e.g., "Process 4192 terminated successfully")
+}
